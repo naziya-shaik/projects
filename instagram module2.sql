@@ -35,14 +35,6 @@ group by p.id
 order by Total_likes desc 
 limit 1;
 
-SELECT u.username, p.id, p.image_url, COUNT(l.created_at) AS Total_Likes
-FROM photos p
-INNER JOIN likes l ON p.id = l.photo_id
-INNER JOIN users u ON p.user_id = u.id
-GROUP BY u.username, p.id, p.image_url
-ORDER BY 4 DESC
-LIMIT 1;
-
 -- task 5:Our Investors want to know...How many times does the average user post? (total number of photos/total number of users)
     select ROUND((SELECT COUNT(*)FROM photos)/(SELECT COUNT(*) FROM users),2); 
 -- or
