@@ -1,0 +1,138 @@
+                                              CAPSTONE PROJECT 1
+1)Sales Data analysis using S3, EMRHive, tableau
+ Analyze and generate dashboards using the insights from the provided sales data using AWS S3, EMRHive and Tableau. Some important insights could be but not limited to Units sold by country, Total revenue and cost per country etc.
+solution:
+There are 3 stages  required in given project
+1)data analysis using  aws s3 bucket.
+2)data load into EMR HIVE .
+3)data load into tableau and generate a dashboards.
+
+stage1:
+-->  login to  AWS account and open  Amazon s3 created new bucket "capstoneprjt".
+--> create new folder name"csv".
+--> in that csv folder upload given database"sales_data.csv".
+--> by selecting  the sales_data we can able to see how data is available in that given csv file.
+select  sales_data-->actions-->querry-->run the querry.
+successfully uploaded data into s3 bucket.
+
+stage2:
+-->we have to create EMR cluster to connect EMR HIVE.
+creation of cluster:
+--> open EMR and create new cluster name"capstone1". Choose default values emr 5.36.0,m5.large,and keep auto termination 4hours.last we have to give keypair. so open EC2 
+select keypairs-->create keypairs-->'saleskeypair'-->.pem(here automatically .pem file will be download into our pc)-->open puttygen-->load our .pem file-->saveprivatekey-->.ppk file -->save.
+-->choose the keypair name into creating cluster and hit on create cluster.
+successfully EMR cluster created.
+-->choose master link and edit inbounded rules(SSH& MYIP)save.
+-->copy master node link
+-->open putty-->paste the master node link-->add-->auth-->choose .ppk file -->open.
+by accepting the window it will directly connect to EMRHIVE.
+-->hive-->show databases;(default database will appear)
+-->create databse salesdb;
+-->use salesdb;
+Creating external table:
+-->create external table if not exists sales_table
+(
+region string,
+country string,
+item_type  string,
+sales_channel  string,
+order_priority  string,
+order_date  string,
+order_id  string,
+ship_date  string,
+units_sold  string,
+unit_price  string,
+unit_cost  string,
+total_revenue string ,
+total_cost string,
+total_profit  string)
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+LOCATION "s3://capstoneprjt/csv/";
+-->show tables;
+-->select * from sales_table limit 20;
+-->select count(*) from sales_table;
+-->describe extended sales_table;   
+-->select distinct item_type from sales_table;
+-->select item_type,count(distinct order_id)total_orders from sales_table group by item-type;
+-->set hive.cli.print.header=true;
+-->select  item_type,count(distinct order_id)total_orders from sales_table group by item-type having item_type<>'item_type" order by total_orders;
+-->select order_id,item_type,order_priority from sales_table limit 10;
+-->select order_id,item_type,item_priority,count(distinct order_id)total_orders from sales_table group by item-type,order_priority having item_type<>'item_type" and order_priority='H' and total_priority>20 order by toatl_orders dsc;
+-->select  distinct sales_channel from sales_table;
+
+
+
+Creating target table:
+create table if not exists target_table
+(
+region string,
+item_type  string,
+sales_channel  string,
+order_priority  string,
+order_date  string,
+order_id  string,
+ship_date  string,
+units_sold  string,
+unit_price  string,
+unit_cost  string,
+total_revenue string,
+total_cost string,
+total_profit  string)
+partitioned by (country string)
+stored as ORC;
+To load data into target table:
+SET hive.exec.compress.intermediate=True;
+SET hive.exec.dynamic.partition=True;
+Set exec.dynamic.partition.mode=nonstrict;
+SET hive.mapred.mode=nonstrict;
+insert overwrite table target_table partition(country)
+
+select
+cast(region as string),
+cast(item_type as string),
+cast(sales_channel as string),
+cast(order_priority as string),
+coalesce(
+  cast(from_unixtime(unix_timestamp(order_date,'MM/dd/yyyy'),"yyyy")as string),
+    cast(from_unixtime(unix_timestamp(order_date,'dd/MM/yyyy'),"yyyy")as string)
+)as order_date,
+cast(order_id as int),
+coalesce(
+  cast(from_unixtime(unix_timestamp(ship_date,'MM/dd/yyyy'),"yyyy")as string),
+    cast(from_unixtime(unix_timestamp(ship_date,'dd/MM/yyyy'),"yyyy")as string)
+)as ship_date,
+cast(units_sold as int),
+cast(unit_price as float),
+cast(unit_cost as float),
+cast(total_revenue as float),
+cast(total_cost as float),
+cast(total_profit as float),
+cast(country  as string)
+from sales_table;
+To see the loaded data in EMR HIVE:
+quit;
+hdfs dfs -ls /user/hive/warehouse/salesdb/
+hdfs dfs -ls /user/hive/warehouse/salesdb/target_table/
+hdfs dfs -ls /user/hive//warehouse/salesdb/target_table/country=japan/
+hive
+use salesdb;
+describe extended target_table;
+select * from target_table where country='iceland';
+stage3:
+connecting to tableau and generating dashboards to easy understand the given data in the form of visuals(graphs):
+-->downloded tableau deskktop latest version
+-->in tableau -->Data-->new data source-->EMRHadoop Hive connector(if it is not visible then we have to download this connector)-->general-->paste the link(master node link)
+-->give the user name-->hive-->next-->sign in
+-- > select data -- >choose target_table-- > create dashboard
+
+Data Analysis:
+there are 7 distinct Regions available
+1.'Asia'-----27 countries
+2.'Australia and Oceania'-------15 countries
+3.'Central America and the Caribbean' ----20 countries
+4.'Europe'------------48 countries
+5.'Middle East and North Africa'----- 23 countries
+6.'North America'-------------- 4 countries
+7.'Sub-Saharan Africa'-----48 countries
+
