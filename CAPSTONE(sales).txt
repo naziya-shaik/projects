@@ -60,6 +60,22 @@ LOCATION "s3://capstoneprjt/csv/";
 -->select order_id,item_type,order_priority from sales_table limit 10;
 -->select order_id,item_type,item_priority,count(distinct order_id)total_orders from sales_table group by item-type,order_priority having item_type<>'item_type" and order_priority='H' and total_priority>20 order by toatl_orders dsc;
 -->select  distinct sales_channel from sales_table;
+-->select region,country,item_type,round(sum(total_profit),2) from sales_data
+group by item_type
+order by sum(total_profit) desc;
+
+--> select * from sales_data where units_sold=(select max(units_sold) from sales_data );
+
+--> select max(units_sold) from sales_data;
+
+-->select region,country,item_type,sum(total_profit) from sales_data where region='Middle East and North Africa' and sales_channel='offline'
+group by item_type
+order by sum(total_profit) desc;
+-->select region,country,item_type,sum(total_profit) from sales_data where region='Middle East and North Africa' 
+group by item_type
+order by sum(total_profit)desc;
+-->select * from sales_data where region='Middle East and North Africa' and units_sold=(select min(units_sold) from sales_data where region ='Middle East and North Africa');
+
 
 
 
@@ -81,7 +97,7 @@ total_cost string,
 total_profit  string)
 partitioned by (country string)
 stored as ORC;
-To load data into target table:
+->To load data into target table:
 SET hive.exec.compress.intermediate=True;
 SET hive.exec.dynamic.partition=True;
 Set exec.dynamic.partition.mode=nonstrict;
